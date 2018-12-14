@@ -1,0 +1,10 @@
+---
+
+- name: Copy the Elasticsearch configuration file
+  copy:
+    dest: /etc/elasticsearch
+    remote_src: false
+    src: elasticsearch.yml
+  become: true
+  notify:
+    - restart elasticsearch

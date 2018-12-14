@@ -1,0 +1,10 @@
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+ExecStart=/usr/bin/metricbeat
+
+[Unit]
+After=systemd-networkd.service
+Description=Collect metrics from your systems and services
+Documentation=https://www.elastic.co/guide/en/beats/metricbeat/current/index.html

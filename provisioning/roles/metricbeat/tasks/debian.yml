@@ -1,0 +1,22 @@
+---
+
+- name: Download and install Metricbeat
+  apt:
+    deb: https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-{{ metricbeat_version }}-amd64.deb
+  become: true
+  when: ansible_architecture == "x86_64"
+
+- name: Copy the Metricbeat unit file
+  copy:
+    dest: /etc/systemd/system
+    remote_src: false
+    src: metricbeat.service
+  become: true
+
+- name: Enable the Metricbeat service at boot
+  systemd:
+    daemon_reload: true
+    enabled: true
+    name: metricbeat
+  become: true
+  when: ansible_distribution_major_version | int >= 15

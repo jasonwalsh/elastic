@@ -1,0 +1,21 @@
+---
+
+- name: Install Elasticsearch dependencies
+  apt:
+    name:
+      - openjdk-8-jre-headless
+  become: true
+
+- name: Download and install Elasticsearch
+  apt:
+    deb: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ elasticsearch_version }}.deb
+  become: true
+  when: ansible_architecture == "x86_64"
+
+- name: Enable the Elasticsearch service at boot
+  systemd:
+    daemon_reload: true
+    enabled: true
+    name: elasticsearch
+  become: true
+  when: ansible_distribution_major_version | int >= 15

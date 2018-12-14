@@ -1,0 +1,10 @@
+---
+
+- name: Copy the Metricbeat configuration file
+  copy:
+    dest: /etc/metricbeat
+    remote_src: false
+    src: metricbeat.yml
+  become: true
+  notify:
+    - restart metricbeat

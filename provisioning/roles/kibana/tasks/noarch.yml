@@ -1,0 +1,10 @@
+---
+
+- name: Copy the Kibana configuration file
+  copy:
+    dest: /etc/kibana
+    remote_src: false
+    src: kibana.yml
+  become: true
+  notify:
+    - restart kibana

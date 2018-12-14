@@ -1,0 +1,13 @@
+---
+
+- gather_facts: true
+  hosts: all
+  tasks:
+    - include_role:
+        name: elasticsearch
+
+    - include_role:
+        name: kibana
+
+    - include_role:
+        name: metricbeat

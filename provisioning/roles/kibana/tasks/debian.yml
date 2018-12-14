@@ -1,0 +1,15 @@
+---
+
+- name: Download and install Kibana
+  apt:
+    deb: https://artifacts.elastic.co/downloads/kibana/kibana-{{ kibana_version }}-amd64.deb
+  become: true
+  when: ansible_architecture == "x86_64"
+
+- name: Enable the Kibana service at boot
+  systemd:
+    daemon_reload: true
+    enabled: true
+    name: kibana
+  become: true
+  when: ansible_distribution_major_version | int >= 15
