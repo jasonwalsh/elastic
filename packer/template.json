@@ -1,0 +1,44 @@
+{
+  "builders": [
+    {
+      "ami_name": "elastic-{{ timestamp }}",
+      "instance_type": "{{ user `instance_type` }}",
+      "profile": "{{ user `profile` }}",
+      "region": "{{ user `region` }}",
+      "source_ami_filter": {
+        "filters": {
+          "name": "ubuntu/images/*ubuntu-bionic-18.04-amd64-server-*",
+          "root-device-type": "ebs",
+          "virtualization-type": "hvm"
+        },
+        "most_recent": true,
+        "owners": [
+          "099720109477"
+        ]
+      },
+      "ssh_username": "ubuntu",
+      "type": "amazon-ebs"
+    }
+  ],
+  "provisioners": [
+    {
+      "inline": [
+        "sudo apt-get update",
+        "sudo apt-get install -y software-properties-common",
+        "sudo apt-add-repository --yes --update ppa:ansible/ansible",
+        "sudo apt-get install -y ansible"
+      ],
+      "type": "shell"
+    },
+    {
+      "playbook_dir": "{{ template_dir }}/../provisioning",
+      "playbook_file": "{{ template_dir }}/../provisioning/playbook.yml",
+      "type": "ansible-local"
+    }
+  ],
+  "variables": {
+    "instance_type": "t2.small",
+    "profile": "{{ env `AWS_PROFILE` }}",
+    "region": "us-east-1"
+  }
+}
