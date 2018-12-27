@@ -38,7 +38,7 @@ module "vpc" {
   tags                         = "${var.tags}"
 }
 
-module "allow_ssh" {
+module "security_group_ssh" {
   source  = "terraform-aws-modules/security-group/aws//modules/ssh"
   version = "2.4.0"
 
@@ -49,6 +49,42 @@ module "allow_ssh" {
   name   = "SSH"
   tags   = "${var.tags}"
   vpc_id = "${module.vpc.vpc_id}"
+}
+
+# ------------ Logstash Settings ------------
+module "security_group_logstash" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "2.9.0"
+
+  ingress_with_cidr_blocks = [
+    {
+      # Metricbeat ingress
+      from_port   = 5044
+      protocol    = "TCP"
+      to_port     = 5044
+      cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      # Logstash ingress
+      from_port   = 9600
+      protocol    = "TCP"
+      to_port     = 9600
+      cidr_blocks = "0.0.0.0/0"
+    },
+  ]
+
+  name   = "logstash"
+  tags   = "${var.tags}"
+  vpc_id = "${module.vpc.vpc_id}"
+}
+
+data "template_file" "logstash" {
+  template = "${file("${path.module}/templates/user-data.conf")}"
+
+  vars {
+    config   = "${base64encode("${file("${path.module}/templates/logstash.yml")}")}"
+    pipeline = "${base64encode("${file("${path.module}/templates/pipeline.conf")}")}"
+  }
 }
 
 module "logstash" {
@@ -67,7 +103,8 @@ module "logstash" {
   min_size                    = "${var.min_size}"
 
   security_groups = [
-    "${module.allow_ssh.this_security_group_id}",
+    "${module.security_group_ssh.this_security_group_id}",
+    "${module.security_group_logstash.this_security_group_id}",
   ]
 
   name = "logstash"
@@ -75,6 +112,8 @@ module "logstash" {
   tags = [
     "${var.tags}",
   ]
+
+  user_data = "${data.template_file.logstash.rendered}"
 
   vpc_zone_identifier = [
     "${module.vpc.public_subnets}",
