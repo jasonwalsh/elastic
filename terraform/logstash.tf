@@ -29,11 +29,19 @@ module "security_group_logstash" {
 # instances associated with the Auto Scaling Group. Modifications to either
 # file forces Terraform to recreate the Launch Configuration.
 data "template_file" "logstash" {
-  template = "${file("${path.module}/templates/user-data.conf")}"
+  template = "${file("${path.module}/templates/logstash/user-data.conf")}"
 
   vars {
-    config   = "${base64encode("${file("${path.module}/templates/logstash.yml")}")}"
-    pipeline = "${base64encode("${file("${path.module}/templates/pipeline.conf")}")}"
+    config   = "${base64encode("${file("${path.module}/templates/logstash/logstash.yml")}")}"
+    pipeline = "${base64encode(data.template_file.pipeline.rendered)}"
+  }
+}
+
+data "template_file" "pipeline" {
+  template = "${file("${path.module}/templates/logstash/pipeline.conf")}"
+
+  vars {
+    dns_name = "${module.alb.dns_name}"
   }
 }
 
@@ -52,13 +60,12 @@ module "logstash" {
   key_name                    = "${aws_key_pair.key_pair.key_name}"
   max_size                    = "${var.max_size}"
   min_size                    = "${var.min_size}"
+  name                        = "logstash"
 
   security_groups = [
     "${module.security_group_ssh.this_security_group_id}",
     "${module.security_group_logstash.this_security_group_id}",
   ]
-
-  name = "logstash"
 
   tags = [
     "${var.tags}",
