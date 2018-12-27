@@ -1,0 +1,31 @@
+---
+
+- name: Add the Elastic signing key
+  apt_key:
+    state: present
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+  become: true
+
+- name: Add the Elastic PPA repository
+  apt_repository:
+    filename: elastic-6.x
+    repo: deb https://artifacts.elastic.co/packages/6.x/apt stable main
+    state: present
+    update_cache: false
+  become: true
+
+- name: Install Logstash
+  apt:
+    name:
+      - logstash
+    state: present
+    update_cache: true
+  become: true
+
+- name: Enable the Logstash service at boot
+  systemd:
+    daemon_reload: true
+    enabled: true
+    name: logstash
+  become: true
+  when: ansible_distribution_major_version | int >= 15

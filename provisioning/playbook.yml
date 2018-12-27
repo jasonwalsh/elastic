@@ -11,3 +11,6 @@
 
     - include_role:
         name: metricbeat
+
+    - include_role:
+        name: logstash
