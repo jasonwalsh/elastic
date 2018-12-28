@@ -41,7 +41,7 @@ data "template_file" "pipeline" {
   template = "${file("${path.module}/templates/logstash/pipeline.conf")}"
 
   vars {
-    dns_name = "${module.alb.dns_name}"
+    dns_name = "${module.alb_elasticsearch.dns_name}"
   }
 }
 

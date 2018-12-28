@@ -22,7 +22,7 @@ module "security_group_elasticsearch" {
   vpc_id = "${module.vpc.vpc_id}"
 }
 
-module "alb" {
+module "alb_elasticsearch" {
   source  = "terraform-aws-modules/alb/aws"
   version = "3.5.0"
 
@@ -98,7 +98,8 @@ module "elasticsearch" {
   ]
 
   target_group_arns = [
-    "${module.alb.target_group_arns}",
+    "${module.alb_elasticsearch.target_group_arns}",
+    "${module.alb_kibana.target_group_arns}",
   ]
 
   user_data = "${data.template_file.elasticsearch.rendered}"

@@ -1,3 +1,3 @@
-output "aws_ami" {
-  value = "${data.aws_ami.ami.id}"
+output "kibana" {
+  value = "${module.alb_kibana.dns_name}"
 }

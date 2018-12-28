@@ -19,4 +19,5 @@ public_key = "~/.ssh/id_rsa.pub"
 
 public_subnets = [
   "10.0.3.0/24",
+  "10.0.4.0/24",
 ]
