@@ -10,6 +10,16 @@ module "security_group_kibana" {
   ingress_with_cidr_blocks = [
     {
       # Kibana ingress
+      from_port   = 80
+      protocol    = "TCP"
+      to_port     = 80
+      cidr_blocks = "0.0.0.0/0"
+    },
+  ]
+
+  ingress_with_cidr_blocks = [
+    {
+      # Kibana ingress
       from_port   = 5601
       protocol    = "TCP"
       to_port     = 5601
@@ -30,7 +40,7 @@ module "alb_kibana" {
 
   http_tcp_listeners = [
     {
-      port     = 5601
+      port     = 80
       protocol = "HTTP"
     },
   ]
