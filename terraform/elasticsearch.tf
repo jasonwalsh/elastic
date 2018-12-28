@@ -65,7 +65,8 @@ data "template_file" "elasticsearch" {
   template = "${file("${path.module}/templates/elasticsearch/user-data.conf")}"
 
   vars {
-    config = "${base64encode("${file("${path.module}/templates/elasticsearch/elasticsearch.yml")}")}"
+    elasticsearch_config = "${base64encode("${file("${path.module}/templates/elasticsearch/elasticsearch.yml")}")}"
+    kibana_config        = "${base64encode("${file("${path.module}/templates/kibana/kibana.yml")}")}"
   }
 }
 
@@ -89,6 +90,7 @@ module "elasticsearch" {
   security_groups = [
     "${module.security_group_ssh.this_security_group_id}",
     "${module.security_group_elasticsearch.this_security_group_id}",
+    "${module.security_group_kibana.this_security_group_id}",
   ]
 
   tags = [
@@ -102,6 +104,6 @@ module "elasticsearch" {
   user_data = "${data.template_file.elasticsearch.rendered}"
 
   vpc_zone_identifier = [
-    "${module.vpc.private_subnets}",
+    "${module.vpc.public_subnets}",
   ]
 }
