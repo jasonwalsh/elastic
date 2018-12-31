@@ -67,13 +67,11 @@ module "logstash" {
     "${module.security_group_logstash.this_security_group_id}",
   ]
 
-  tags = [
-    "${var.tags}",
-  ]
-
-  user_data = "${data.template_file.logstash.rendered}"
+  tags_as_map = "${var.tags}"
+  user_data   = "${data.template_file.logstash.rendered}"
 
   vpc_zone_identifier = [
+    "${module.vpc.private_subnets}",
     "${module.vpc.public_subnets}",
   ]
 }

@@ -1,6 +1,14 @@
 // Provider variables
-variable "profile" {
-  description = "This is the AWS profile name as set in the shared credentials file"
+variable "access_key" {
+  description = "This is the AWS access key"
+}
+
+variable "region" {
+  description = "This is the AWS region"
+}
+
+variable "secret_key" {
+  description = "This is the AWS secret key"
 }
 
 // Resource variables
