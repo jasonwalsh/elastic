@@ -7,6 +7,7 @@ provider "aws" {
 locals {
   config = {
     elasticsearch = "${file("${path.module}/templates/elasticsearch/elasticsearch.yml")}"
+    kibana        = "${file("${path.module}/templates/kibana/kibana.yml")}"
     logstash      = "${file("${path.module}/templates/logstash/logstash.yml")}"
   }
 

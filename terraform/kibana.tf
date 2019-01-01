@@ -75,6 +75,22 @@ module "alb_kibana" {
   vpc_id = "${module.vpc.vpc_id}"
 }
 
+data "template_file" "kibana_config" {
+  template = "${local.config["kibana"]}"
+
+  vars {
+    elasticsearch_url = "http://${module.alb_elasticsearch.dns_name}:9200"
+  }
+}
+
+data "template_file" "kibana" {
+  template = "${file("${path.module}/templates/kibana/user-data.conf")}"
+
+  vars {
+    config = "${base64encode(data.template_file.kibana_config.rendered)}"
+  }
+}
+
 module "kibana" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "2.9.0"
@@ -104,7 +120,7 @@ module "kibana" {
     "${module.alb_kibana.target_group_arns}",
   ]
 
-  # user_data = "${data.template_file.cloudinit.rendered}"
+  user_data = "${data.template_file.kibana.rendered}"
 
   vpc_zone_identifier = [
     "${module.vpc.public_subnets}",

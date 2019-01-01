@@ -71,7 +71,6 @@ module "logstash" {
   user_data   = "${data.template_file.logstash.rendered}"
 
   vpc_zone_identifier = [
-    "${module.vpc.private_subnets}",
     "${module.vpc.public_subnets}",
   ]
 }

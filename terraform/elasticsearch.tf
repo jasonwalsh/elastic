@@ -129,7 +129,7 @@ module "alb_elasticsearch" {
   vpc_id = "${module.vpc.vpc_id}"
 }
 
-data "template_file" "config" {
+data "template_file" "es_config" {
   template = "${local.config["elasticsearch"]}"
 
   vars {
@@ -153,12 +153,16 @@ data "template_file" "elasticsearch" {
     access_key = "${var.access_key}"
     secret_key = "${var.secret_key}"
 
-    config = "${base64encode(element(data.template_file.config.*.rendered, count.index))}"
+    config = "${base64encode(element(data.template_file.es_config.*.rendered, count.index))}"
   }
 
   count = "${length(local.nodes)}"
 }
 
+# The master node is responsible for lightweight cluster-wide actions
+# such as creating or deleting an index, tracking which nodes are part
+# of the cluster, and deciding which shards to allocate to which nodes.
+# It is important for cluster health to have a stable master node.
 module "master" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "2.9.0"
@@ -190,6 +194,11 @@ module "master" {
   ]
 }
 
+# Data nodes hold the shards that contain the documents you have
+# indexed. Data nodes handle data related operations like CRUD, search,
+# and aggregations. These operations are I/O-, memory-, and
+# CPU-intensive. It is important to monitor these resources and to add
+# more data nodes if they are overloaded.
 module "data" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "2.9.0"
