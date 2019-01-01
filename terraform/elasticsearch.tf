@@ -1,18 +1,12 @@
 # ------------ Elasticsearch Settings ------------
 
 locals {
-  config = {
-    elasticsearch = "${file("${path.module}/templates/elasticsearch/elasticsearch.yml")}"
-    kibana        = "${file("${path.module}/templates/kibana/kibana.yml")}"
-  }
+  endpoint = "${lookup(local.endpoints, var.region, "us-east-1")}"
 
-  # AWS Regions and Endpoints
-  endpoint = {
-    us-east-1 = "ec2.us-east-1.amazonaws.com"
-    us-east-2 = "ec2.us-east-2.amazonaws.com"
-    us-west-1 = "ec2.us-west-1.amazonaws.com"
-    us-west-2 = "ec2.us-west-2.amazonaws.com"
-  }
+  nodes = "${list(
+      map("master", "true", "data", "false", "ingest", "false"),
+      map("master", "false", "data", "true", "ingest", "false")
+    )}"
 }
 
 # EC2 discovery requires making a call to the EC2 service.
@@ -81,8 +75,10 @@ module "security_group_elasticsearch" {
       cidr_blocks = "0.0.0.0/0"
     },
     {
-      # Elasticsearch transport
-      from_port   = 9300
+      # Elasticsearch transport ingress rule for internal communication between
+      # nodes within the cluster.
+      from_port = 9300
+
       protocol    = "TCP"
       to_port     = 9400
       cidr_blocks = "0.0.0.0/0"
@@ -133,29 +129,37 @@ module "alb_elasticsearch" {
   vpc_id = "${module.vpc.vpc_id}"
 }
 
-data "template_file" "elasticsearch" {
+data "template_file" "config" {
   template = "${local.config["elasticsearch"]}"
 
   vars {
-    endpoint             = "${lookup(local.endpoint, var.region, "us-east-1")}"
+    data   = "${lookup(local.nodes[count.index], "data")}"
+    ingest = "${lookup(local.nodes[count.index], "ingest")}"
+    master = "${lookup(local.nodes[count.index], "master")}"
+
+    endpoint             = "${local.endpoint}"
     minimum_master_nodes = "${floor((var.desired_capacity / 2) + 1)}"
     security_group_ids   = "${module.security_group_elasticsearch.this_security_group_id}"
   }
+
+  count = "${length(local.nodes)}"
 }
 
-data "template_file" "cloudinit" {
+data "template_file" "elasticsearch" {
   template = "${file("${path.module}/templates/elasticsearch/user-data.conf")}"
 
   vars {
+    # Sensitive data stored within the Elasticsearch keystore.
     access_key = "${var.access_key}"
     secret_key = "${var.secret_key}"
 
-    elasticsearch_config = "${base64encode("${data.template_file.elasticsearch.rendered}")}"
-    kibana_config        = "${base64encode("${local.config["kibana"]}")}"
+    config = "${base64encode(element(data.template_file.config.*.rendered, count.index))}"
   }
+
+  count = "${length(local.nodes)}"
 }
 
-module "elasticsearch" {
+module "master" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "2.9.0"
 
@@ -176,17 +180,46 @@ module "elasticsearch" {
   security_groups = [
     "${module.security_group_ssh.this_security_group_id}",
     "${module.security_group_elasticsearch.this_security_group_id}",
-    "${module.security_group_kibana.this_security_group_id}",
   ]
 
-  tags_as_map = "${var.tags}"
+  tags_as_map = "${merge(map("Node", "master"), var.tags)}"
+  user_data   = "${element(data.template_file.elasticsearch.*.rendered, 0)}"
+
+  vpc_zone_identifier = [
+    "${module.vpc.public_subnets}",
+  ]
+}
+
+module "data" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "2.9.0"
+
+  asg_name                    = "elasticsearch"
+  associate_public_ip_address = true
+  create_asg                  = true
+  create_lc                   = true
+  desired_capacity            = "${var.desired_capacity}"
+  health_check_type           = "EC2"
+  iam_instance_profile        = "${aws_iam_instance_profile.elasticsearch.name}"
+  image_id                    = "${data.aws_ami.ami.id}"
+  instance_type               = "${var.instance_type}"
+  key_name                    = "${aws_key_pair.key_pair.key_name}"
+  max_size                    = "${var.max_size}"
+  min_size                    = "${var.min_size}"
+  name                        = "elasticsearch"
+
+  security_groups = [
+    "${module.security_group_ssh.this_security_group_id}",
+    "${module.security_group_elasticsearch.this_security_group_id}",
+  ]
+
+  tags_as_map = "${merge(map("Node", "data"), var.tags)}"
 
   target_group_arns = [
     "${module.alb_elasticsearch.target_group_arns}",
-    "${module.alb_kibana.target_group_arns}",
   ]
 
-  user_data = "${data.template_file.cloudinit.rendered}"
+  user_data = "${element(data.template_file.elasticsearch.*.rendered, 1)}"
 
   vpc_zone_identifier = [
     "${module.vpc.public_subnets}",

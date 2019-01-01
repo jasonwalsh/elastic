@@ -4,6 +4,21 @@ provider "aws" {
   secret_key = "${var.secret_key}"
 }
 
+locals {
+  config = {
+    elasticsearch = "${file("${path.module}/templates/elasticsearch/elasticsearch.yml")}"
+    logstash      = "${file("${path.module}/templates/logstash/logstash.yml")}"
+  }
+
+  # AWS Regions and Endpoints
+  endpoints = {
+    us-east-1 = "ec2.us-east-1.amazonaws.com"
+    us-east-2 = "ec2.us-east-2.amazonaws.com"
+    us-west-1 = "ec2.us-west-1.amazonaws.com"
+    us-west-2 = "ec2.us-west-2.amazonaws.com"
+  }
+}
+
 data "aws_ami" "ami" {
   filter {
     name   = "name"

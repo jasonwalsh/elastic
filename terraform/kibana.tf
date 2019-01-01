@@ -74,3 +74,39 @@ module "alb_kibana" {
 
   vpc_id = "${module.vpc.vpc_id}"
 }
+
+module "kibana" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "2.9.0"
+
+  asg_name                    = "kibana"
+  associate_public_ip_address = false
+  create_asg                  = true
+  create_lc                   = true
+  desired_capacity            = "${var.desired_capacity}"
+  health_check_type           = "EC2"
+  iam_instance_profile        = "${aws_iam_instance_profile.elasticsearch.name}"
+  image_id                    = "${data.aws_ami.ami.id}"
+  instance_type               = "${var.instance_type}"
+  key_name                    = "${aws_key_pair.key_pair.key_name}"
+  max_size                    = "${var.max_size}"
+  min_size                    = "${var.min_size}"
+  name                        = "kibana"
+
+  security_groups = [
+    "${module.security_group_ssh.this_security_group_id}",
+    "${module.security_group_kibana.this_security_group_id}",
+  ]
+
+  tags_as_map = "${var.tags}"
+
+  target_group_arns = [
+    "${module.alb_kibana.target_group_arns}",
+  ]
+
+  # user_data = "${data.template_file.cloudinit.rendered}"
+
+  vpc_zone_identifier = [
+    "${module.vpc.public_subnets}",
+  ]
+}

@@ -32,7 +32,7 @@ data "template_file" "logstash" {
   template = "${file("${path.module}/templates/logstash/user-data.conf")}"
 
   vars {
-    config   = "${base64encode("${file("${path.module}/templates/logstash/logstash.yml")}")}"
+    config   = "${base64encode(local.config["logstash"])}"
     pipeline = "${base64encode(data.template_file.pipeline.rendered)}"
   }
 }
