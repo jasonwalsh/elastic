@@ -1,12 +1,10 @@
 # ------------ Elasticsearch Settings ------------
 
 locals {
-  endpoint = "${lookup(local.endpoints, var.region, "us-east-1")}"
-
   nodes = "${list(
-      map("master", "true", "data", "false", "ingest", "false"),
-      map("master", "false", "data", "true", "ingest", "false")
-    )}"
+    map("master", "true", "data", "false", "ingest", "false"),
+    map("master", "false", "data", "true", "ingest", "false")
+  )}"
 }
 
 # EC2 discovery requires making a call to the EC2 service.
@@ -137,7 +135,7 @@ data "template_file" "es_config" {
     ingest = "${lookup(local.nodes[count.index], "ingest")}"
     master = "${lookup(local.nodes[count.index], "master")}"
 
-    endpoint             = "${local.endpoint}"
+    endpoint             = "${data.aws_region.current.endpoint}"
     minimum_master_nodes = "${floor((var.desired_capacity / 2) + 1)}"
     security_group_ids   = "${module.security_group_elasticsearch.this_security_group_id}"
   }
@@ -167,19 +165,18 @@ module "master" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "2.9.0"
 
-  asg_name                    = "elasticsearch"
-  associate_public_ip_address = true
-  create_asg                  = true
-  create_lc                   = true
-  desired_capacity            = "${var.desired_capacity}"
-  health_check_type           = "EC2"
-  iam_instance_profile        = "${aws_iam_instance_profile.elasticsearch.name}"
-  image_id                    = "${data.aws_ami.ami.id}"
-  instance_type               = "${var.instance_type}"
-  key_name                    = "${aws_key_pair.key_pair.key_name}"
-  max_size                    = "${var.max_size}"
-  min_size                    = "${var.min_size}"
-  name                        = "elasticsearch"
+  asg_name             = "elasticsearch"
+  create_asg           = true
+  create_lc            = true
+  desired_capacity     = "${var.desired_capacity}"
+  health_check_type    = "EC2"
+  iam_instance_profile = "${aws_iam_instance_profile.elasticsearch.name}"
+  image_id             = "${data.aws_ami.ami.id}"
+  instance_type        = "${var.instance_type}"
+  key_name             = "${aws_key_pair.key_pair.key_name}"
+  max_size             = "${var.max_size}"
+  min_size             = "${var.min_size}"
+  name                 = "elasticsearch"
 
   security_groups = [
     "${module.security_group_ssh.this_security_group_id}",
@@ -190,7 +187,7 @@ module "master" {
   user_data   = "${element(data.template_file.elasticsearch.*.rendered, 0)}"
 
   vpc_zone_identifier = [
-    "${module.vpc.public_subnets}",
+    "${module.vpc.private_subnets}",
   ]
 }
 
@@ -203,19 +200,18 @@ module "data" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "2.9.0"
 
-  asg_name                    = "elasticsearch"
-  associate_public_ip_address = true
-  create_asg                  = true
-  create_lc                   = true
-  desired_capacity            = "${var.desired_capacity}"
-  health_check_type           = "EC2"
-  iam_instance_profile        = "${aws_iam_instance_profile.elasticsearch.name}"
-  image_id                    = "${data.aws_ami.ami.id}"
-  instance_type               = "${var.instance_type}"
-  key_name                    = "${aws_key_pair.key_pair.key_name}"
-  max_size                    = "${var.max_size}"
-  min_size                    = "${var.min_size}"
-  name                        = "elasticsearch"
+  asg_name             = "elasticsearch"
+  create_asg           = true
+  create_lc            = true
+  desired_capacity     = "${var.desired_capacity}"
+  health_check_type    = "EC2"
+  iam_instance_profile = "${aws_iam_instance_profile.elasticsearch.name}"
+  image_id             = "${data.aws_ami.ami.id}"
+  instance_type        = "${var.instance_type}"
+  key_name             = "${aws_key_pair.key_pair.key_name}"
+  max_size             = "${var.max_size}"
+  min_size             = "${var.min_size}"
+  name                 = "elasticsearch"
 
   security_groups = [
     "${module.security_group_ssh.this_security_group_id}",
@@ -231,6 +227,6 @@ module "data" {
   user_data = "${element(data.template_file.elasticsearch.*.rendered, 1)}"
 
   vpc_zone_identifier = [
-    "${module.vpc.public_subnets}",
+    "${module.vpc.private_subnets}",
   ]
 }

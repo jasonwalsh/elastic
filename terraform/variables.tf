@@ -41,6 +41,10 @@ variable "min_size" {
   description = "The minimum size of the group"
 }
 
+variable "private_key" {
+  description = "The private key material"
+}
+
 variable "private_subnets" {
   default = []
   type    = "list"

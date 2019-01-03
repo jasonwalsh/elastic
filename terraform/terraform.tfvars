@@ -10,6 +10,8 @@ max_size = 3
 
 min_size = 2
 
+private_key = "~/.ssh/id_rsa"
+
 private_subnets = [
   "10.0.1.0/24",
   "10.0.2.0/24",
