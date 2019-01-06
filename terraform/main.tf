@@ -83,6 +83,7 @@ module "bastion" {
 
   ami                         = "${data.aws_ami.bastion.id}"
   associate_public_ip_address = true
+  instance_count              = 1
   instance_type               = "t2.micro"
   key_name                    = "${aws_key_pair.key_pair.key_name}"
   name                        = "bastion"
