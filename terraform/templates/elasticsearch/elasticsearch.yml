@@ -80,6 +80,7 @@ discovery.zen.hosts_provider: ec2
 discovery.ec2.endpoint: ${endpoint}
 discovery.ec2.groups: ${security_group_ids}
 discovery.ec2.tag.Name: elasticsearch
+discovery.ec2.tag.Node: master
 
 cloud.node.auto_attributes: true
 cluster.routing.allocation.awareness.attributes: aws_availability_zone
