@@ -1,16 +1,3 @@
-// Provider variables
-variable "access_key" {
-  description = "This is the AWS access key"
-}
-
-variable "region" {
-  description = "This is the AWS region"
-}
-
-variable "secret_key" {
-  description = "This is the AWS secret key"
-}
-
 // Resource variables
 variable "cidr" {
   description = "The IPv4 network range for the VPC, in CIDR notation"

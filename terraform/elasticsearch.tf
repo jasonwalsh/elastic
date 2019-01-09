@@ -8,9 +8,7 @@ locals {
 }
 
 # EC2 discovery requires making a call to the EC2 service.
-resource "aws_iam_role_policy" "elasticsearch" {
-  name = "elasticsearch"
-
+resource "aws_iam_role_policy" "discovery" {
   policy = <<EOF
 {
 "Statement": [
@@ -28,32 +26,17 @@ resource "aws_iam_role_policy" "elasticsearch" {
 }
 EOF
 
-  role = "${aws_iam_role.elasticsearch.id}"
+  role = "${aws_iam_role.s3access.id}"
 }
 
-resource "aws_iam_role" "elasticsearch" {
-  assume_role_policy = <<EOF
-{
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "ec2.amazonaws.com"
-      },
-      "Sid": ""
-    }
-  ],
-  "Version": "2012-10-17"
-}
-EOF
-
-  name = "elasticsearch"
+resource "aws_iam_role_policy_attachment" "iam_role_policy_attachment" {
+  policy_arn = "${aws_iam_policy.trust.arn}"
+  role       = "${aws_iam_role.s3access.name}"
 }
 
 resource "aws_iam_instance_profile" "elasticsearch" {
   name = "elasticsearch"
-  role = "${aws_iam_role_policy.elasticsearch.role}"
+  role = "${aws_iam_role.s3access.name}"
 }
 
 module "security_group_elasticsearch" {
@@ -147,10 +130,6 @@ data "template_file" "elasticsearch" {
   template = "${file("${path.module}/templates/elasticsearch/user-data.conf")}"
 
   vars {
-    # Sensitive data stored within the Elasticsearch keystore.
-    access_key = "${var.access_key}"
-    secret_key = "${var.secret_key}"
-
     config = "${base64encode(element(data.template_file.es_config.*.rendered, count.index))}"
   }
 
